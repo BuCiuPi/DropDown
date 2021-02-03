@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class playerController : MonoBehaviour
+public class PlayerController : MonoBehaviour
 {
     GameObject obj;
 
@@ -16,11 +16,11 @@ public class playerController : MonoBehaviour
     public Rigidbody2D rb;
     public Animator anim;
 
-    Vector2 moverment;
+    public Vector2 moverment;
     float timePressDown = 0;
     float percentOfJumpForce = 0;
     public bool hadjump = true;
-    //bool onGround = false;
+    //bool OnGround = false;
     Collision2D coli;
 
     Vector3 ressetPoint;
@@ -41,54 +41,39 @@ public class playerController : MonoBehaviour
         // resetchar
         if (Input.GetKeyDown(KeyCode.R))
         {
-            gameObject.transform.position = new Vector3(ressetPoint.x,ressetPoint.y + 0.5f,ressetPoint.z);
+            obj.transform.position = new Vector3(ressetPoint.x,ressetPoint.y + 0.5f,ressetPoint.z);
         }
         if (Input.GetKeyDown(KeyCode.T))
         {
-            ressetPoint = gameObject.transform.position;
+            ressetPoint = obj.transform.position;
         }
 
-        if (Input.GetKey(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow))
+        if (Input.GetKeyDown(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow))
         {
-            moverment.x = -1;
+            GetComponentInParent<PlayerController>().anim.SetInteger("status", 0);
+            onBtnMoveLeftDown();
         }
-        if (Input.GetKey(KeyCode.RightArrow) && !Input.GetKey(KeyCode.LeftArrow))
+        if (Input.GetKeyDown(KeyCode.RightArrow) && !Input.GetKey(KeyCode.LeftArrow))
         {
-            moverment.x = 1;
+            GetComponentInParent<PlayerController>().anim.SetInteger("status", 0);
+            onBtnMoveRightDown();
         }
-        if (Input.GetKeyUp(KeyCode.LeftArrow))
+        if (Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetKeyUp(KeyCode.RightArrow))
         {
-            moverment.x = 0;
+            OnMoveBtnUp();
         }
-        if (Input.GetKeyUp(KeyCode.RightArrow))
-        {
-            moverment.x = 0;
-        }
+
+
         /*moverment.y = Input.GetAxis("Vertical");*/
-
-        // animation trigger
-        if (moverment.x > 0)
-        {
-            obj.transform.localScale = new Vector3(1, 1, 1);
-        }
-        if (moverment.x < 0)
-        {
-            obj.transform.localScale = new Vector3(-1, 1, 1);
-        }
-
-        if (true)
-        {
-            Input.GetKey(KeyCode.Space);
-        }
 
 
         // moving
-        if (gameObject.GetComponentInChildren<foot>().onGround() && (!Input.GetKey(KeyCode.Space) || !jumpclick) && hadjump)
+        if (obj.GetComponentInChildren<Foot>().OnGround() && (!Input.GetKey(KeyCode.Space) || !jumpclick) && hadjump)
         {
             rb.velocity = new Vector2(moverment.x * moveSpeed, rb.velocity.y);
         }
 
-        if (gameObject.GetComponentInChildren<foot>().onGround() && (Input.GetKey(KeyCode.Space) || jumpclick))
+        if (obj.GetComponentInChildren<Foot>().OnGround() && (Input.GetKey(KeyCode.Space) || jumpclick))
         {
             rb.velocity = new Vector2(0, 0);
         }
@@ -104,9 +89,9 @@ public class playerController : MonoBehaviour
         }
 
         // jumping when time out
-        if ((Input.GetKey(KeyCode.Space) || jumpHover) && Time.time - timePressDown > 1 && !hadjump && GetComponentInChildren<foot>().onGround())
+        if ((Input.GetKey(KeyCode.Space) || jumpHover) && Time.time - timePressDown > 1 && !hadjump && GetComponentInChildren<Foot>().OnGround())
         {
-            jumpCharge(holdTime);
+            JumpCharge(holdTime);
             
         }
 
@@ -115,11 +100,16 @@ public class playerController : MonoBehaviour
         {
             onBtnJumpUp();
         }
-        if (!jumpclick && gameObject.GetComponentInChildren<foot>().onGround() && !hadjump)
+        if (!jumpclick && obj.GetComponentInChildren<Foot>().OnGround() && !hadjump)
         {
             percentOfJumpForce = (Time.time - timePressDown)/*/holdTime*/;
-            jumpCharge(percentOfJumpForce);
+            JumpCharge(percentOfJumpForce);
 
+        }
+        if (!GetComponentInChildren<Foot>().OnGround())
+        {
+            GetComponent<PlayerController>().anim.SetFloat("Velocity.X", rb.velocity.x);
+            GetComponent<PlayerController>().anim.SetFloat("Velocity.Y", rb.velocity.y);
         }
 
         //limited the droping speed
@@ -131,7 +121,7 @@ public class playerController : MonoBehaviour
 
     }
 
-    private void jumpCharge(float percentOfJumpForce)
+    private void JumpCharge(float percentOfJumpForce)
     {
         if ((Input.GetKey(KeyCode.RightArrow) || moverment.x == 1) || (Input.GetKey(KeyCode.LeftArrow) || moverment.x == -1))
         {
@@ -153,18 +143,43 @@ public class playerController : MonoBehaviour
     public void onBtnMoveRightDown()
     {
         moverment.x = 1;
-        
+
+        //animation for Right
+        GetComponent<PlayerController>().anim.SetFloat("Moverment", 2);
         Debug.Log("right");
     }
     public void onBtnMoveLeftDown()
     {
         moverment.x = -1;
 
+        //animation for Left
+        GetComponent<PlayerController>().anim.SetFloat("Moverment", -2);
         Debug.Log("left");
     }
     public void OnMoveBtnUp()
     {
         moverment.x = 0;
+
+        // Idle animation
+        if (GetComponent<PlayerController>().anim.GetFloat("Moverment") == 2)
+        {
+            GetComponent<PlayerController>().anim.SetFloat("Moverment", 1);
+        }
+        else
+        {
+
+        }
+
+
+        if (GetComponent<PlayerController>().anim.GetFloat("Moverment") == -2)
+
+        {
+            GetComponent<PlayerController>().anim.SetFloat("Moverment", -1);
+        }
+        else
+        {
+
+        }
     }
 
 
@@ -174,7 +189,7 @@ public class playerController : MonoBehaviour
     {
         jumpclick = true;
         timePressDown = Time.time;
-        GetComponentInParent<playerController>().anim.SetInteger("status", 1);
+        GetComponentInParent<PlayerController>().anim.SetInteger("status", 1);
         hadjump = false;
     }
     public void onBtnJumpUp()
@@ -196,9 +211,10 @@ public class playerController : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         // bouncing Part
-        if (!GetComponentInChildren<foot>().onGround())
+        if (!GetComponentInChildren<Foot>().OnGround())
         {
             rb.velocity = Vector2.Reflect(vel * 0.01f * PercentOfBounce, collision.contacts[0].normal);
+            GetComponentInParent<PlayerController>().anim.SetInteger("status", 4);
         }
         hadjump = true;
     }
