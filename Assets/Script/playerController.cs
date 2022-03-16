@@ -20,6 +20,7 @@ public class PlayerController : MonoBehaviour
     float timePressDown = 0;
     float percentOfJumpForce = 0;
     public bool hadjump = true;
+    bool isSlippy = false;
     //bool OnGround = false;
     Collision2D coli;
 
@@ -41,34 +42,39 @@ public class PlayerController : MonoBehaviour
         // resetchar
         if (Input.GetKeyDown(KeyCode.R))
         {
-            obj.transform.position = new Vector3(ressetPoint.x,ressetPoint.y + 0.5f,ressetPoint.z);
+            obj.transform.position = new Vector3(ressetPoint.x, ressetPoint.y + 0.5f, ressetPoint.z);
+            rb.velocity = new Vector2(0, 0);
         }
         if (Input.GetKeyDown(KeyCode.T))
         {
             ressetPoint = obj.transform.position;
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow))
+        if (Input.GetKey(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow) && !isSlippy)
         {
-            GetComponentInParent<PlayerController>().anim.SetInteger("status", 0);
+            //GetComponentInParent<PlayerController>().anim.SetInteger("status", 0);
             onBtnMoveLeftDown();
         }
-        if (Input.GetKeyDown(KeyCode.RightArrow) && !Input.GetKey(KeyCode.LeftArrow))
+        if (Input.GetKey(KeyCode.RightArrow) && !Input.GetKey(KeyCode.LeftArrow) && !isSlippy)
         {
-            GetComponentInParent<PlayerController>().anim.SetInteger("status", 0);
+            //GetComponentInParent<PlayerController>().anim.SetInteger("status", 0);
             onBtnMoveRightDown();
         }
-        if (Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetKeyUp(KeyCode.RightArrow))
+        if (Input.GetKeyUp(KeyCode.LeftArrow) && !Input.GetKey(KeyCode.RightArrow))
+        {
+            OnMoveBtnUp();
+        }
+        if (Input.GetKeyUp(KeyCode.RightArrow) && !Input.GetKey(KeyCode.LeftArrow))
         {
             OnMoveBtnUp();
         }
 
 
-        /*moverment.y = Input.GetAxis("Vertical");*/
+        ///*moverment.y = Input.GetAxis("Vertical");*/
 
 
         // moving
-        if (obj.GetComponentInChildren<Foot>().OnGround() && (!Input.GetKey(KeyCode.Space) || !jumpclick) && hadjump)
+        if (obj.GetComponentInChildren<Foot>().OnGround() && (!Input.GetKey(KeyCode.Space) || !jumpclick) && hadjump && moverment.x != 0 && !isSlippy)
         {
             rb.velocity = new Vector2(moverment.x * moveSpeed, rb.velocity.y);
         }
@@ -92,7 +98,7 @@ public class PlayerController : MonoBehaviour
         if ((Input.GetKey(KeyCode.Space) || jumpHover) && Time.time - timePressDown > 1 && !hadjump && GetComponentInChildren<Foot>().OnGround())
         {
             JumpCharge(holdTime);
-            
+
         }
 
         //jump when keyUP
@@ -106,17 +112,17 @@ public class PlayerController : MonoBehaviour
             JumpCharge(percentOfJumpForce);
 
         }
-        if (!GetComponentInChildren<Foot>().OnGround())
+        if (!GetComponentInChildren<Foot>().OnGround() || true)
         {
             GetComponent<PlayerController>().anim.SetFloat("Velocity.X", rb.velocity.x);
             GetComponent<PlayerController>().anim.SetFloat("Velocity.Y", rb.velocity.y);
         }
 
         //limited the droping speed
-        //if (rb.velocity.y < -dropingspeed)
-        //{
-        //    rb.velocity = new Vector2(rb.velocity.x, -dropingspeed);
-        //}
+        if (rb.velocity.y < -dropingspeed)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, -dropingspeed);
+        }
         //Debug.Log(rb.velocity);
 
     }
@@ -142,24 +148,29 @@ public class PlayerController : MonoBehaviour
     
     public void onBtnMoveRightDown()
     {
-        moverment.x = 1;
 
-        //animation for Right
-        GetComponent<PlayerController>().anim.SetFloat("Moverment", 2);
-        Debug.Log("right");
+            moverment.x = 1;
+
+            //animation for Right
+            GetComponent<PlayerController>().anim.SetFloat("Moverment", 2);
+            //Debug.Log("right");
+
     }
     public void onBtnMoveLeftDown()
     {
-        moverment.x = -1;
+            moverment.x = -1;
 
-        //animation for Left
-        GetComponent<PlayerController>().anim.SetFloat("Moverment", -2);
-        Debug.Log("left");
+            //animation for Left
+            GetComponent<PlayerController>().anim.SetFloat("Moverment", -2);
+            //Debug.Log("left");
     }
     public void OnMoveBtnUp()
     {
         moverment.x = 0;
-
+        if (GetComponentInChildren<Foot>().OnGround())
+        {
+            rb.velocity = new Vector2(0, 0);
+        }
         // Idle animation
         if (GetComponent<PlayerController>().anim.GetFloat("Moverment") == 2)
         {
@@ -180,6 +191,7 @@ public class PlayerController : MonoBehaviour
         {
 
         }
+        Debug.Log(rb.velocity);
     }
 
 
@@ -207,21 +219,34 @@ public class PlayerController : MonoBehaviour
         jumpHover = false;
     }
 
-    Vector2 vel;
+    public Vector2 vel;
+    
+    public void setVel0()
+    {
+        rb.velocity = new Vector2(0, 0);
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         // bouncing Part
         if (!GetComponentInChildren<Foot>().OnGround())
         {
-            rb.velocity = Vector2.Reflect(vel * 0.01f * PercentOfBounce, collision.contacts[0].normal);
+            //rb.velocity = new Vector2(0, 0);
+            //rb.velocity = Vector2.Reflect(vel * 0.01f * PercentOfBounce, collision.contacts[0].normal);
             GetComponentInParent<PlayerController>().anim.SetInteger("status", 4);
+        }
+        if (collision.gameObject.tag == "Slippy Platform")
+        {
+            isSlippy = true;
         }
         hadjump = true;
     }
-
     private void OnCollisionExit2D(Collision2D collision)
     {
-        
+        if (collision.gameObject.tag == "Slippy Platform")
+        {
+            isSlippy = false;
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)

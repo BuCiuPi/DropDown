@@ -19,17 +19,34 @@ public class Foot : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+
         onTheGround = true;
-        GetComponentInParent<PlayerController>().anim.SetInteger("status", 5);
+        if (GetComponentInParent<PlayerController>().anim.GetInteger("status") == 4)
+        {
+            GetComponentInParent<PlayerController>().anim.SetInteger("status", 5);
+        }
+        else
+        {
+            GetComponentInParent<PlayerController>().anim.SetInteger("status", 0);
+        }
+
         GetComponentInParent<PlayerController>().hadjump = true;
+
+        GetComponentInParent<PlayerController>().setVel0();
+
+        Debug.Log("on ground");
     }
     private void OnTriggerExit2D(Collider2D collision)
     {
         onTheGround = false;
         GetComponentInParent<PlayerController>().anim.SetInteger("status", 2);
     }
+
+
     public bool OnGround()
     {
         return onTheGround;
     }
+
+    
 }
